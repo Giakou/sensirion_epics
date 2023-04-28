@@ -5,10 +5,10 @@ import time
 import smbus2
 import functools
 
-import utils.conversion_utils as cu
-import sensirion_i2c.utils.log_utils as lu
+import sensirion_i2c.sht.utils.conversion_utils as conversion_utils
+import sensirion_i2c.utils.log_utils as log_utils
 
-logger = lu.get_logger()
+logger = log_utils.get_logger()
 
 
 class SHT:
@@ -85,7 +85,7 @@ class SHT:
     def write_i2c_block_data_sht(self, cmd):
         """Wrapper function for writing block data to SHT85 sensor"""
         self.bus.write_i2c_block_data(self.addr, register=cmd[0], data=cmd[1:])
-        time.sleep(cu.WT[self.rep])
+        time.sleep(conversion_utils.WT[self.rep])
 
     def general_call_reset(self):
         """General Call mode to rese all devices on the same I2C bus line (not device specific!). This command only
