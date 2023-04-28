@@ -7,8 +7,8 @@ SHT85 Python wrapper library of smbus2
 
 import functools
 
-import lib.conversion_utils as cu
-import lib.log_utils as lu
+import utils.conversion_utils as cu
+import sensirion_i2c.utils.log_utils as lu
 import sht
 
 logger = lu.get_logger()
@@ -183,7 +183,7 @@ class SHT85(sht.SHT):
             }
         }
         logger.debug(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
-                    f'"{self.rep}" repetition...')
+                     f'"{self.rep}" repetition...')
         self.write_i2c_block_data_sht(periodic_code[self.mps][self.rep])
 
     @printer

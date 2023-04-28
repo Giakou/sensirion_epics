@@ -6,7 +6,7 @@ import smbus2
 import functools
 
 import utils.conversion_utils as cu
-import utils.log_utils as lu
+import sensirion_i2c.utils.log_utils as lu
 
 logger = lu.get_logger()
 
