@@ -5,9 +5,9 @@
 Test script for basic SHT85 functionality
 """
 
-import sht85
+import sensirion_i2c.sht.sht85 as sht85
 import time
-import log_utils
+import sensirion_i2c.utils.log_utils as log_utils
 
 if __name__ == '__main__':
     logger = log_utils.get_logger('INFO')

@@ -7,11 +7,11 @@ SHT85 Python wrapper library of smbus2
 
 import functools
 
-import lib.conversion_utils as cu
-import lib.log_utils as lu
-import sht
+import sensirion_i2c.sht.utils.conversion_utils as conversion_utils
+import sensirion_i2c.utils.log_utils as log_utils
+import sensirion_i2c.sht.sht as sht
 
-logger = lu.get_logger()
+logger = log_utils.get_logger()
 
 
 def printer(func):
@@ -116,10 +116,10 @@ class SHT85(sht.SHT):
         # The measurement data consists of 6 bytes (2 for each measurement value and 1 for each checksum)
         self.data = self.read_i2c_block_data_sht(6)
         temp_digital = self.data[0] << 8 | self.data[1]
-        self.t = cu.temp(temp_digital)
+        self.t = conversion_utils.temp(temp_digital)
         rh_digital = self.data[3] << 8 | self.data[4]
-        self.rh = cu.relative_humidity(rh_digital)
-        self.dp = cu.dew_point(self.t, self.rh)
+        self.rh = conversion_utils.relative_humidity(rh_digital)
+        self.dp = conversion_utils.dew_point(self.t, self.rh)
 
     def crc8(self, buffer):
         """CRC-8 checksum calculation from data"""
@@ -183,7 +183,7 @@ class SHT85(sht.SHT):
             }
         }
         logger.debug(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
-                    f'"{self.rep}" repetition...')
+                     f'"{self.rep}" repetition...')
         self.write_i2c_block_data_sht(periodic_code[self.mps][self.rep])
 
     @printer

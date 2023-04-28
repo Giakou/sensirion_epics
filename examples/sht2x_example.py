@@ -5,12 +5,12 @@
 Test script for basic SHT85 functionality
 """
 
-import sht2x
+import sensirion_i2c.sht.sht2x as sht2x
 import time
-import lib.log_utils
+import sensirion_i2c.utils.log_utils as log_utils
 
 if __name__ == '__main__':
-    logger = lib.log_utils.get_logger('INFO')
+    logger = log_utils.get_logger('INFO')
 
     # Create SHT85 object
     mysensor = sht2x.SHT2x(bus=1, mps=1, rep='high')
