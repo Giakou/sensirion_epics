@@ -25,11 +25,12 @@ def printer(func):
 
 class SHT85(sht.SHT):
     """SHT85 class"""
-    def __init__(self, bus, rep, mps):
+    def __init__(self, bus_intf, rep, mps):
         """Constructor"""
-        super().__init__(bus)
+        super().__init__()
 
         self._addr = 0x44
+        self._bus_intf = bus_intf
         # Assertion checks
         assert rep in ['high', 'medium', 'low'], f'Repetition number "{rep}" is not allowed, ' \
                                                  'only "high", "medium" or "low"!'
@@ -42,18 +43,6 @@ class SHT85(sht.SHT):
         self.rh = None
         self.dp = None
 
-    def __enter__(self):
-        """Enter handler"""
-        return self
-
-    def __exit__(self):
-        """Exit handler"""
-        self.close()
-
-    def close(self):
-        """Close the I2C connection"""
-        self.bus.close()
-
     @property
     def sn(self):
         return self._sn(cmd=[0x36, 0x82])
@@ -65,8 +54,8 @@ class SHT85(sht.SHT):
     @property
     def status(self):
         """Read Status Register"""
-        self.write_i2c_block_data_sht([0xF3, 0x2D])
-        status_read = self.read_i2c_block_data_sht(3)
+        self.write_i2c_data_sht([0xF3, 0x2D])
+        status_read = self.read_i2c_data_sht(3)
         status = status_read[0] << 8 | status_read[1]
         status_to_bit = f'{status:016b}'
         status_dict = {
@@ -114,7 +103,7 @@ class SHT85(sht.SHT):
     def read_data(self):
         """Readout data for Periodic Mode or ART feature and update the properties"""
         # The measurement data consists of 6 bytes (2 for each measurement value and 1 for each checksum)
-        self.data = self.read_i2c_block_data_sht(6)
+        self.data = self.read_i2c_data_sht(6)
         temp_digital = self.data[0] << 8 | self.data[1]
         self.t = conversion_utils.temp(temp_digital)
         rh_digital = self.data[3] << 8 | self.data[4]
@@ -149,7 +138,7 @@ class SHT85(sht.SHT):
             'medium': [0x24, 0x0B],
             'low': [0x24, 0x16]
         }
-        self.write_i2c_block_data_sht(rep_code[self.rep])
+        self.write_i2c_data_sht(rep_code[self.rep])
         self.read_data()
 
     @printer
@@ -182,49 +171,49 @@ class SHT85(sht.SHT):
                 'low': [0x27, 0x2A]
             }
         }
-        logger.debug(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
-                     f'"{self.rep}" repetition...')
-        self.write_i2c_block_data_sht(periodic_code[self.mps][self.rep])
+        logger.info(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
+                    f'"{self.rep}" repetition...')
+        self.write_i2c_data_sht(periodic_code[self.mps][self.rep])
 
     @printer
     def fetch(self):
         """Fetch command to transmit the measurement data. After the transmission the data memory is cleared"""
         logger.debug('Fetching data...')
-        self.write_i2c_block_data_sht([0xE0, 0x00])
+        self.write_i2c_data_sht([0xE0, 0x00])
 
     @printer
     def art(self):
         """Start the Accelerated Response Time (ART) feature"""
         logger.info('Activating Accelerated Response Time (ART)...')
-        self.write_i2c_block_data_sht([0x2B, 0x32])
+        self.write_i2c_data_sht([0x2B, 0x32])
 
     @printer
     def stop(self):
         """Break command to stop Periodic Data Acquisition Mode or ART feature"""
-        logger.info('Issuing Break Command...')
-        self.write_i2c_block_data_sht([0x30, 0x93])
+        logger.debug('Issuing Break Command...')
+        self.write_i2c_data_sht([0x30, 0x93])
 
     @printer
     def reset(self):
         """Apply Soft Reset"""
         self.stop()
         logger.debug('Applying Soft Reset...')
-        self.write_i2c_block_data_sht([0x30, 0xA2])
+        self.write_i2c_data_sht([0x30, 0xA2])
 
     @printer
     def enable_heater(self):
         """Enable heater"""
         logger.warning('Enabling heater...')
-        self.write_i2c_block_data_sht([0x30, 0x6D])
+        self.write_i2c_data_sht([0x30, 0x6D])
 
     @printer
     def disable_heater(self):
         """Disable heater"""
         logger.info('Disabling heater...')
-        self.write_i2c_block_data_sht([0x30, 0x66])
+        self.write_i2c_data_sht([0x30, 0x66])
 
     @printer
     def clear_status(self):
         """Clear Status Register"""
         logger.info('Clearing Status Register...')
-        self.write_i2c_block_data_sht([0x30, 0x41])
+        self.write_i2c_data_sht([0x30, 0x41])
