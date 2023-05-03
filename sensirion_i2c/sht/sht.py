@@ -35,15 +35,15 @@ class SHT:
 
     def open_rpi_bus(self):
         # Assertion check
-        assert self._bus_intf not in [0, 2], f'Bus number "{self._bus_intf}" is not allowed, because they are reserved! ' \
-                                             f'Choose another one!'
+        assert self._bus_intf not in [0, 2], f'Bus interface "{self._bus_intf}" is not allowed, because they ' \
+                                             f'are reserved! Choose another one!'
         self.bus.open(self._bus_intf)
 
     def close_rpi_bus(self):
         try:
             self.stop()
         except TypeError:
-            logger.warning(f'Bus {self._bus_intf} never opened properly!')
+            logger.warning(f'Bus interface {self._bus_intf} never opened properly!')
         self.bus.close()
 
     def calculate_crc(kw):
