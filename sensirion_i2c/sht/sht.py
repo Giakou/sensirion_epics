@@ -27,7 +27,7 @@ class SHT:
             self.open_rpi_bus()
             yield
         except FileNotFoundError:
-            logger.warning(f'Bus {self.bus} is not configured for I2C!')
+            logger.error(f'Bus interface {self._bus_intf} is not configured for I2C!')
         except (KeyboardInterrupt, SystemExit):
             logger.warning('Killing Thread...')
         finally:
@@ -40,7 +40,10 @@ class SHT:
         self.bus.open(self._bus_intf)
 
     def close_rpi_bus(self):
-        self.stop()
+        try:
+            self.stop()
+        except TypeError:
+            logger.warning(f'Bus {self._bus_intf} never opened properly!')
         self.bus.close()
 
     def calculate_crc(kw):
