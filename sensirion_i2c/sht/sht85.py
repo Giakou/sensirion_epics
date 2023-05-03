@@ -25,12 +25,12 @@ def printer(func):
 
 class SHT85(sht.SHT):
     """SHT85 class"""
-    def __init__(self, bus, rep, mps):
+    def __init__(self, bus_intf, rep, mps):
         """Constructor"""
         super().__init__()
 
         self._addr = 0x44
-        self._bus = bus
+        self._bus_intf = bus_intf
         # Assertion checks
         assert rep in ['high', 'medium', 'low'], f'Repetition number "{rep}" is not allowed, ' \
                                                  'only "high", "medium" or "low"!'

@@ -13,7 +13,7 @@ if __name__ == '__main__':
     logger = log_utils.get_logger('INFO')
 
     # Create SHT85 object
-    mysensor = sht85.SHT85(bus=1, mps=1, rep='high')
+    mysensor = sht85.SHT85(bus_intf=1, mps=1, rep='high')
 
     # Check S/N
     logger.info(f'serial number = {mysensor.sn}')

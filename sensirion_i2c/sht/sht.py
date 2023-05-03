@@ -12,13 +12,14 @@ import sensirion_i2c.utils.log_utils as log_utils
 logger = log_utils.get_logger()
 
 
-class SHT(SMBus):
+class SHT:
 
     def __init__(self):
         super().__init__()
         # Define properties
         self._addr = None
-        self._bus = None
+        self._bus_intf = None
+        self._bus = SMBus()
         self.check_crc_bool = True
 
     @contextmanager
@@ -26,17 +27,22 @@ class SHT(SMBus):
         try:
             self.open_rpi_bus()
             yield
+        except FileNotFoundError:
+            logger.warning(f'Bus {self.bus} is not configured for I2C!')
         except (KeyboardInterrupt, SystemExit):
-            logger.warning("Killing Thread...")
+            logger.warning('Killing Thread...')
         finally:
-            self.stop()
-            self.close()
+            self.close_rpi_bus()
 
     def open_rpi_bus(self):
         # Assertion check
         assert self._bus not in [0, 2], f'Bus number "{self._bus}" is not allowed, because they are reserved! ' \
                                         f'Choose another one!'
-        self.open(self._bus)
+        self.bus.open(self._bus_intf)
+
+    def close_rpi_bus(self):
+        self.stop()
+        self.bus.close()
 
     def calculate_crc(kw):
         """Decorator function to calculate crc"""
@@ -70,13 +76,23 @@ class SHT(SMBus):
 
     @property
     def bus(self):
-        """Get the smbus attribute"""
+        """Get the SMBus instance from attribute"""
         return self._bus
 
     @bus.setter
     def bus(self, value):
-        """Set the smbus attribute"""
-        raise AttributeError("The bus number which the slave device belongs to is fixed and cannot be modified!")
+        """Set the SMBus instance as attribute"""
+        raise AttributeError("The SMBus instance representing the slave device cannot be modified!")
+
+    @property
+    def bus_intf(self):
+        """Get the I2C bus interface from attribute"""
+        return self._bus_intf
+
+    @bus_intf.setter
+    def bus_intf(self, value):
+        """Set the I2C bus interface as attribute"""
+        raise AttributeError("The I2C bus interface which the slave device belongs to is fixed and cannot be modified!")
 
     @property
     def addr(self):
@@ -96,31 +112,31 @@ class SHT(SMBus):
         return (self.data[0] << 24) + (self.data[1] << 16) + (self.data[3] << 8) + self.data[4]
 
     def read_i2c_data_sht(self, length=32):
-        return self.read_i2c_block_data(self.addr, 0x00, length)
+        return self.bus.read_i2c_block_data(self.addr, 0x00, length)
 
     def write_i2c_data_sht(self, cmd):
         """Wrapper function for writing block data to SHT85 sensor"""
         if len(cmd) == 1:
             cmd = cmd[0] if isinstance(cmd, list) else cmd
-            self.write_byte(self.addr, cmd)
+            self.bus.write_byte(self.addr, cmd)
         else:
-            self.write_i2c_block_data(self.addr, register=cmd[0], data=cmd[1:])
+            self.bus.write_i2c_block_data(self.addr, register=cmd[0], data=cmd[1:])
         time.sleep(conversion_utils.WT[self.rep])
 
     def general_call_reset(self):
         """General Call mode to rese all devices on the same I2C bus line (not device specific!). This command only
         works if the device is able to process I2C commands."""
         logger.warning('Applying General Call Reset... This is not device specific!')
-        self.write_byte(0x00, 0x06)
+        self.bus.write_byte(0x00, 0x06)
 
     def interface_reset(self, addr):
         logger.info('Interface reset...')
         # Toggling SDA
         for i in range(9):
-            self.write_byte(addr, 0xFF)
+            self.bus.write_byte(addr, 0xFF)
             time.sleep(0.01)
 
         # Send the Start sequence before the next command
-        self.write_byte(addr, 0x35)
-        self.write_byte(addr, 0x17)
+        self.bus.write_byte(addr, 0x35)
+        self.bus.write_byte(addr, 0x17)
 
