@@ -15,10 +15,9 @@ if __name__ == '__main__':
     # Create SHT85 object
     mysensor = sht85.SHT85(bus_intf=1, mps=1, rep='high')
 
-    # Check S/N
-    logger.info(f'serial number = {mysensor.sn}')
-
     with mysensor.i2c_daq():
+        # Check S/N
+        logger.info(f'serial number = {mysensor.sn}')
         while True:
             # Single shot mode is preferred due to less current consumption (x8-x200) in idle state
             mysensor.single_shot()

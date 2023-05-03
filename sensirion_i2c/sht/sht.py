@@ -15,7 +15,6 @@ logger = log_utils.get_logger()
 class SHT:
 
     def __init__(self):
-        super().__init__()
         # Define properties
         self._addr = None
         self._bus_intf = None
