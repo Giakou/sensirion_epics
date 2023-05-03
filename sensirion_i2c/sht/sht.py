@@ -35,8 +35,8 @@ class SHT:
 
     def open_rpi_bus(self):
         # Assertion check
-        assert self._bus not in [0, 2], f'Bus number "{self._bus}" is not allowed, because they are reserved! ' \
-                                        f'Choose another one!'
+        assert self._bus_intf not in [0, 2], f'Bus number "{self._bus_intf}" is not allowed, because they are reserved! ' \
+                                             f'Choose another one!'
         self.bus.open(self._bus_intf)
 
     def close_rpi_bus(self):
