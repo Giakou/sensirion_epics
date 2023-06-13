@@ -10,14 +10,13 @@ with open('requirements.txt') as f:
     install_requires = f.read().splitlines()
 
 setup(
-    name="sensirion_i2c",
+    name="sensirion_epics",
     version=version,
     python_requires='>=3.0',
-    description='Python wrapper library of Adafruit_PureIO.smbus for Sensirion SHT85 sensors',
+    description='Python package for communication with various Sensirion sensors via EPICS (optional)',
     url='https://github.com/Giakou/sht85.git',
     license='GNU GPL',
-    long_description='Python wrapper library of Adafruit_PureIO.smbus for Sensirion SHT85 sensors connected to I2c pins'
-                     ' of a Raspberrry Pi',
+    long_description='Python package for communication with various Sensirion sensors via EPICS (optional)',
     install_requires=install_requires,
     author=author,
     maintainer=author,

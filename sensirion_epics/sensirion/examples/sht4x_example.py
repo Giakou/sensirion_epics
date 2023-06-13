@@ -22,7 +22,6 @@ if __name__ == '__main__':
         # Check S/N
         logger.info(f'serial number = {mysensor.sn}')
         while True:
-            # Single shot mode is preferred due to less current consumption (x8-x200) in idle state
             mysensor.single_shot()
             logger.info(f'Temperature = {mysensor.t} °C')
             logger.info(f'Relative Humidity = {mysensor.rh}%')
