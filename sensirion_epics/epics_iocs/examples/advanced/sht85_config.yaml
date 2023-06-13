@@ -1,0 +1,44 @@
+# SHT85 PV configuration file
+
+# How often to scan the value
+'scan': 1
+
+# Construct temperature, relative humidity and dew point PV names based on this dictionary
+'prefix': 'PXD:EN:B4'
+'sensor':
+  'fwd_sht_inner':
+    'bus_intf': 1
+    'mps': 1
+    'rep': 'high'
+  'bwd_sht_inner':
+    'bus_intf': 3
+    'mps': 1
+    'rep': 'high'
+
+'pv_names':
+  'temperature:VALUE:cur':
+    'type': 'float'
+    'unit': '°C'
+    'prec': 3
+    'mdel': -1
+    'error_value': -300
+    'lut': 't'
+  'humidity:VALUE:cur':
+    'type': 'float'
+    'unit': '%'
+    'prec': 3
+    'mdel': -1
+    'error_value': 100
+    'lut': 'rh'
+  'dewpoint:VALUE:cur':
+    'type': 'float'
+    'unit': '°C'
+    'prec': 3
+    'mdel': -1
+    'error_value': 300
+    'lut': 'dp'
+
+# SHT85 specs
+'sht85':
+  't_accuracy': 0.1  # degrees Celsius
+  'rh_accuracy': 1.5  # %RH
