@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Parent class for SHTxy sensors from Sensirion
+"""
+
 import abc
 import math
 
@@ -11,7 +15,7 @@ import sensirion_epics.utils.log_utils as log_utils
 logger = log_utils.get_logger()
 
 
-class SHT(sensirion.Sensirion):
+class SHT(sensirion.SensirionI2C):
 
     def __init__(self):
         super().__init__()
