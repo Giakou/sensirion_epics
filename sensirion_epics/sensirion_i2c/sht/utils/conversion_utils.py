@@ -30,21 +30,6 @@ WT = {
 }
 
 
-def temp(temp_digital):
-    """Calculate temperature from data"""
-    # Significant digits based on the SHT85 resolution of 0.01 degrees Celsius
-    return round(-45 + 175 * temp_digital / (2**16 - 1), 2)
-
-
-def relative_humidity(rh_digital):
-    """Calculate relative humidity from data"""
-    # Significant digits based on the SHT85 resolution of 0.01 %RH
-    rh_analog = round(100 * rh_digital / (2**16 - 1), 2)
-    # Make sure that relative humidity never returns a 0% value, otherwise the dew point calculation will fail
-    rh_analog = 1e-3 if rh_analog < 0.01 else rh_analog
-    return rh_analog
-
-
 def dew_point(t, rh):
     """Calculate dew point from temperature and relative humidity using Magnus formula. For more info:
     https://sensirion.com/media/documents/8AB2AD38/61642ADD/Sensirion_AppNotes_Humidity_Sensors_Introduction_to_Relative_Humidit.pdf"""

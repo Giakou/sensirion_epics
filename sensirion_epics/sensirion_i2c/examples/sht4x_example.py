@@ -2,18 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-Test script for basic SHT85 functionality
+Test script for basic SHT4x functionality
 """
 
-import sensirion_i2c.sht.sht85 as sht85
+import sensirion_epics.sensirion_i2c.sht.sht4x as sht4x
 import time
-import sensirion_i2c.utils.log_utils as log_utils
+import sensirion_epics.utils.log_utils as log_utils
 
 if __name__ == '__main__':
     logger = log_utils.get_logger('INFO')
 
-    # Create SHT85 object
-    mysensor = sht85.SHT85(bus_intf=1, mps=1, rep='high')
+    # Create SHT4x object
+    mysensor = sht4x.SHT4x(addr=0x45, bus_intf=1, rep='high')
+
+    # Check S/N
+    logger.info(f'serial number = {mysensor.sn}')
 
     with mysensor.i2c_daq():
         # Check S/N
@@ -24,4 +27,4 @@ if __name__ == '__main__':
             logger.info(f'Temperature = {mysensor.t} °C')
             logger.info(f'Relative Humidity = {mysensor.rh}%')
             logger.info(f'Dew Point = {mysensor.dp} °C')
-            time.sleep(mysensor.mps)
+            time.sleep(1)

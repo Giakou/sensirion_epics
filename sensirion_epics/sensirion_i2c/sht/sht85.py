@@ -5,27 +5,16 @@
 SHT85 Python wrapper library of smbus2
 """
 
-import functools
-
-import sensirion_i2c.sht.utils.conversion_utils as conversion_utils
-import sensirion_i2c.utils.log_utils as log_utils
-import sensirion_i2c.sht.sht as sht
+import sensirion_epics.sensirion_i2c.sensirion_i2c as sensirion_i2c
+import sensirion_epics.utils.log_utils as log_utils
+import sensirion_epics.sensirion_i2c.sht.sht as sht
 
 logger = log_utils.get_logger()
 
 
-def printer(func):
-    """Decorator function to Inform the user that write/read command was successful"""
-    @functools.wraps(func)
-    def wrapper(self, **kwargs):
-        func(self, **kwargs)
-        logger.debug('Done!')
-    return wrapper
-
-
 class SHT85(sht.SHT):
     """SHT85 class"""
-    def __init__(self, bus_intf, rep, mps):
+    def __init__(self, bus_intf=1, rep='high', mps=1):
         """Constructor"""
         super().__init__()
 
@@ -39,24 +28,17 @@ class SHT85(sht.SHT):
 
         self.rep = rep
         self.mps = mps
-        self.t = None
-        self.rh = None
-        self.dp = None
 
     @property
     def sn(self):
         return self._sn(cmd=[0x36, 0x82])
 
-    @sn.setter
-    def sn(self, value):
-        raise AttributeError("The S/N of the slave device is unique and cannot be modified!")
-
     @property
     def status(self):
         """Read Status Register"""
-        self.write_i2c_data_sht([0xF3, 0x2D])
-        status_read = self.read_i2c_data_sht(3)
-        status = status_read[0] << 8 | status_read[1]
+        self.write_data_i2c([0xF3, 0x2D])
+        self.read_data_i2c(3)
+        status = self.buffer[0] << 8 | self.buffer[1]
         status_to_bit = f'{status:016b}'
         status_dict = {
             'Checksum status': status_to_bit[0],
@@ -87,7 +69,7 @@ class SHT85(sht.SHT):
                 logger.warning('Checksum of last write transfer failed!')
             elif key == 'Command status':
                 logger.warning('Last command not processed! It was either invalid or failed the integrated command '
-                              'checksum!')
+                               'checksum!')
             elif key == 'System reset':
                 logger.warning('no reset detected since last "clearstatus register" command!')
             elif key == 'T tracking alert':
@@ -99,38 +81,6 @@ class SHT85(sht.SHT):
             elif key == 'Alert pending status':
                 logger.warning('At least one pending alert!')
 
-    @sht.SHT.calculate_crc(kw='data')
-    def read_data(self):
-        """Readout data for Periodic Mode or ART feature and update the properties"""
-        # The measurement data consists of 6 bytes (2 for each measurement value and 1 for each checksum)
-        self.data = self.read_i2c_data_sht(6)
-        temp_digital = self.data[0] << 8 | self.data[1]
-        self.t = conversion_utils.temp(temp_digital)
-        rh_digital = self.data[3] << 8 | self.data[4]
-        self.rh = conversion_utils.relative_humidity(rh_digital)
-        self.dp = conversion_utils.dew_point(self.t, self.rh)
-
-    def crc8(self, buffer):
-        """CRC-8 checksum calculation from data"""
-        # Initialize the checksum with a byte full of 1s
-        crc = 0xFF
-        # Polynomial to divide with
-        polynomial = 0x131
-        for byte in buffer:
-            # Perform XOR operation between the crc and the byte
-            crc ^= byte
-            for _ in range(8):
-                # Extract the leftmost bit of the CRC register
-                bit = crc & 0x80
-                # Shift the crc register by one bit to the left
-                crc <<= 1
-                # If leftmost bit is 1 perform XOR between CRC and polynomial
-                if bit:
-                    crc ^= polynomial
-            # Mask the original value to ensure that it remains within the range of 8 bits (final XOR)
-            crc ^= 0x00
-        return crc
-
     def single_shot(self):
         """Single Shot Data Acquisition Mode"""
         rep_code = {
@@ -138,10 +88,10 @@ class SHT85(sht.SHT):
             'medium': [0x24, 0x0B],
             'low': [0x24, 0x16]
         }
-        self.write_i2c_data_sht(rep_code[self.rep])
-        self.read_data()
+        self.write_data_i2c(rep_code[self.rep])
+        self.read_measurement()
 
-    @printer
+    @sensirion_i2c.printer
     def periodic(self):
         """Start Periodic Data Acquisition Mode"""
         periodic_code = {
@@ -173,47 +123,60 @@ class SHT85(sht.SHT):
         }
         logger.info(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
                     f'"{self.rep}" repetition...')
-        self.write_i2c_data_sht(periodic_code[self.mps][self.rep])
+        self.write_data_i2c(periodic_code[self.mps][self.rep])
 
-    @printer
+    @sensirion_i2c.printer
     def fetch(self):
         """Fetch command to transmit the measurement data. After the transmission the data memory is cleared"""
         logger.debug('Fetching data...')
-        self.write_i2c_data_sht([0xE0, 0x00])
+        self.write_data_i2c([0xE0, 0x00])
 
-    @printer
+    @sensirion_i2c.printer
     def art(self):
         """Start the Accelerated Response Time (ART) feature"""
         logger.info('Activating Accelerated Response Time (ART)...')
-        self.write_i2c_data_sht([0x2B, 0x32])
+        self.write_data_i2c([0x2B, 0x32])
 
-    @printer
+    @sensirion_i2c.printer
     def stop(self):
         """Break command to stop Periodic Data Acquisition Mode or ART feature"""
         logger.debug('Issuing Break Command...')
-        self.write_i2c_data_sht([0x30, 0x93])
+        self.write_data_i2c([0x30, 0x93])
 
-    @printer
+    @sensirion_i2c.printer
     def reset(self):
         """Apply Soft Reset"""
         self.stop()
         logger.debug('Applying Soft Reset...')
-        self.write_i2c_data_sht([0x30, 0xA2])
+        self.write_data_i2c([0x30, 0xA2])
 
-    @printer
+    @sensirion_i2c.printer
     def enable_heater(self):
         """Enable heater"""
         logger.warning('Enabling heater...')
-        self.write_i2c_data_sht([0x30, 0x6D])
+        self.write_data_i2c([0x30, 0x6D])
 
-    @printer
+    @sensirion_i2c.printer
     def disable_heater(self):
         """Disable heater"""
         logger.info('Disabling heater...')
-        self.write_i2c_data_sht([0x30, 0x66])
+        self.write_data_i2c([0x30, 0x66])
 
-    @printer
+    @sensirion_i2c.printer
     def clear_status(self):
         """Clear Status Register"""
         logger.info('Clearing Status Register...')
-        self.write_i2c_data_sht([0x30, 0x41])
+        self.write_data_i2c([0x30, 0x41])
+
+    def temp_conversion(self, temp_digital):
+        """Calculate temperature from data"""
+        # Significant digits based on the SHT85 resolution of 0.01 degrees Celsius
+        return round(-45 + 175 * temp_digital / (2 ** 16 - 1), 2)
+
+    def rhw_conversion(self, rh_digital):
+        """Calculate relative humidity from data"""
+        # Significant digits based on the SHT85 resolution of 0.01 %RH
+        rh_analog = round(100 * rh_digital / (2 ** 16 - 1), 2)
+        # Make sure that relative humidity never returns a 0% value, otherwise the dew point calculation will fail
+        rh_analog = 1e-3 if rh_analog < 0.01 else rh_analog
+        return rh_analog

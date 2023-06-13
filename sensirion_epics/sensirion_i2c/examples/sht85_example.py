@@ -5,20 +5,20 @@
 Test script for basic SHT85 functionality
 """
 
-import sensirion_i2c.sht.sht2x as sht2x
 import time
-import sensirion_i2c.utils.log_utils as log_utils
+
+import sensirion_epics.sensirion_i2c.sht.sht85 as sht85
+import sensirion_epics.utils.log_utils as log_utils
 
 if __name__ == '__main__':
     logger = log_utils.get_logger('INFO')
 
     # Create SHT85 object
-    mysensor = sht2x.SHT2x(bus=1, mps=1, rep='high')
+    mysensor = sht85.SHT85(bus_intf=1, mps=1, rep='high')
 
-    # Check S/N
-    logger.info(f'serial number = {mysensor.sn}')
-
-    try:
+    with mysensor.i2c_daq():
+        # Check S/N
+        logger.info(f'serial number = {mysensor.sn}')
         while True:
             # Single shot mode is preferred due to less current consumption (x8-x200) in idle state
             mysensor.single_shot()
@@ -26,8 +26,3 @@ if __name__ == '__main__':
             logger.info(f'Relative Humidity = {mysensor.rh}%')
             logger.info(f'Dew Point = {mysensor.dp} °C')
             time.sleep(mysensor.mps)
-
-    except (KeyboardInterrupt, SystemExit):
-        logger.warning("Killing Thread...")
-    finally:
-        mysensor.stop()
