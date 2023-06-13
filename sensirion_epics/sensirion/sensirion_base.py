@@ -8,7 +8,7 @@ import time
 from smbus2 import SMBus
 from contextlib import contextmanager
 
-import sensirion_epics.sensirion_i2c.sht.utils.conversion_utils as cu
+import sensirion_epics.sensirion.sht.utils.conversion_utils as cu
 import sensirion_epics.utils.log_utils as log_utils
 
 logger = log_utils.get_logger()
@@ -55,7 +55,7 @@ def crc8(buffer):
     return crc
 
 
-class Sensirion(metaclass=abc.ABCMeta):
+class SensirionI2C(metaclass=abc.ABCMeta):
 
     def __int__(self):
         # Define properties
@@ -187,3 +187,87 @@ class Sensirion(metaclass=abc.ABCMeta):
         # Send the Start sequence before the next command
         self.bus.write_byte(addr, 0x35)
         self.bus.write_byte(addr, 0x17)
+
+
+class SensirionRS485(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionRS232(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionPWM(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionSensibus(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionSDM(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionSPI(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionUART(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionModBus(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionLIN(metaclass=abc.ABCMeta):
+
+    def __init__(self):
+        pass
+
+
+class SensirionAnalogVoltage(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+
+class SensirionAnalogCurrent(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+
+class SensirionProfiBus(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+
+class SensirionIOLink(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+
+class SensirionSwitch(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
+
+
+class SensirionDeviceNet(metaclass=abc.ABCMeta):
+    def __init__(self):
+        pass
