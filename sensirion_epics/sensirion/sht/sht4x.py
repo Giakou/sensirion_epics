@@ -9,7 +9,7 @@ import functools
 import time
 
 import sensirion_epics.utils.log_utils as log_utils
-import sensirion_epics.sensirion_i2c.sht.sht as sht
+import sensirion_epics.sensirion.sht.sht as sht
 
 logger = log_utils.get_logger()
 

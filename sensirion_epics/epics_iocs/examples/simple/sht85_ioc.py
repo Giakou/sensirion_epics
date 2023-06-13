@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import time
-import sensirion_epics.sensirion_i2c.sht.sht85 as sht85
+import sensirion_epics.sensirion.sht.sht85 as sht85
 from pcaspy import Driver, SimpleServer
 
 prefix = 'sht85'

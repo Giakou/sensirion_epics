@@ -4,7 +4,7 @@ import os
 import time
 import traceback
 import yaml
-import sensirion_epics.sensirion_i2c.sht.sht85 as sht85
+import sensirion_epics.sensirion.sht.sht85 as sht85
 from contextlib import ExitStack
 from sensirion_epics.utils import log_utils
 from datetime import datetime

@@ -7,7 +7,7 @@ Test script for basic SHT85 functionality
 
 import time
 
-import sensirion_epics.sensirion_i2c.sht.sht85 as sht85
+import sensirion_epics.sensirion.sht.sht85 as sht85
 import sensirion_epics.utils.log_utils as log_utils
 
 if __name__ == '__main__':

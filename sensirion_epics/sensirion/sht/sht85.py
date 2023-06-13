@@ -5,9 +5,9 @@
 SHT85 Python wrapper library of smbus2
 """
 
-import sensirion_epics.sensirion_i2c.sensirion_i2c as sensirion_i2c
+import sensirion_epics.sensirion.sensirion_base as sensirion_i2c
 import sensirion_epics.utils.log_utils as log_utils
-import sensirion_epics.sensirion_i2c.sht.sht as sht
+import sensirion_epics.sensirion.sht.sht as sht
 
 logger = log_utils.get_logger()
 

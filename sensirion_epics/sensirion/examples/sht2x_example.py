@@ -5,7 +5,7 @@
 Test script for basic SHT2x functionality
 """
 
-import sensirion_epics.sensirion_i2c.sht.sht2x as sht2x
+import sensirion_epics.sensirion.sht.sht2x as sht2x
 import time
 import sensirion_epics.utils.log_utils as log_utils
 

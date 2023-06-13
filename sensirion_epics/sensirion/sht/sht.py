@@ -4,8 +4,8 @@
 import abc
 import math
 
-import sensirion_epics.sensirion_i2c.sensirion_i2c as sensirion
-import sensirion_epics.sensirion_i2c.sht.utils.conversion_utils as cu
+import sensirion_epics.sensirion.sensirion_base as sensirion
+import sensirion_epics.sensirion.sht.utils.conversion_utils as cu
 import sensirion_epics.utils.log_utils as log_utils
 
 logger = log_utils.get_logger()
