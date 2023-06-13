@@ -64,7 +64,7 @@ class SensirionBase(metaclass=abc.ABCMeta):
 
 class SensirionI2C(SensirionBase):
 
-    def __int__(self):
+    def __init__(self):
         # Define properties
         self._addr = None
         self._bus_intf = None
