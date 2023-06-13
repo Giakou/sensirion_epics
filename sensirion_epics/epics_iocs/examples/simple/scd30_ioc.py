@@ -41,18 +41,24 @@ if __name__ == '__main__':
     # Instantiating the Driver
     driver = Driver()
     # Instantiate the SHT85 sensor
-    mysht = scd30.SCD30(bus_intf=1, rep='high', mps=1)
+    myscd = scd30.SCD30(bus_intf=1)
     start_time = time.time()
-    while True:
-        t = time.time()
-        # measure and update the PV value every 4 seconds
-        if (t - start_time) >= 4:
-            # Take a single measurement in single shot mode
-            mysht.single_shot()
-            # Set PV values
-            driver.setParam('temperature', mysht.t)
-            driver.setParam('rel_humidity', mysht.rh)
-            driver.setParam('dew_point', mysht.dp)
-            # Update PVs
-            driver.update()
-            server.process(0.1)
+
+    # Start context manager
+    with myscd.i2c_daq():
+        # Start continuous measurement with default settings
+        myscd.continuous_meas()
+        while True:
+            t = time.time()
+            # measure and update the PV value every 4 seconds
+            if (t - start_time) >= 4:
+                # Fetch data when ready
+                myscd.fetch()
+                # Set PV values
+                driver.setParam('co2_concentration', myscd.co2)
+                driver.setParam('temperature', myscd.t)
+                driver.setParam('rel_humidity', myscd.rh)
+                driver.setParam('dew_point', myscd.dp)
+                # Update PVs
+                driver.update()
+                server.process(0.1)
