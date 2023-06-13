@@ -55,7 +55,14 @@ def crc8(buffer):
     return crc
 
 
-class SensirionI2C(metaclass=abc.ABCMeta):
+class SensirionBase(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def __init__(self):
+        pass
+
+
+class SensirionI2C(SensirionBase):
 
     def __int__(self):
         # Define properties
