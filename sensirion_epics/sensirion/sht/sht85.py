@@ -5,7 +5,8 @@
 SHT85 Python wrapper library of smbus2
 """
 
-import sensirion_epics.sensirion.sensirion_base as sensirion_i2c
+import sensirion_epics.sensirion.sensirion_base as sensirion
+import sensirion_epics.sensirion.sht.utils.conversion_utils as cu
 import sensirion_epics.utils.log_utils as log_utils
 import sensirion_epics.sensirion.sht.sht as sht
 
@@ -14,6 +15,13 @@ logger = log_utils.get_logger()
 
 class SHT85(sht.SHT):
     """SHT85 class"""
+
+    _wait_times = {
+        'high': 0.0155,
+        'medium': 0.0065,
+        'low': 0.0045
+    }
+
     def __init__(self, bus_intf=1, rep='high', mps=1):
         """Constructor"""
         super().__init__()
@@ -34,9 +42,10 @@ class SHT85(sht.SHT):
         return self._sn(cmd=[0x36, 0x82])
 
     @property
+    @sensirion.calculate_crc
     def status(self):
         """Read Status Register"""
-        self.write_data_i2c([0xF3, 0x2D])
+        self.write_data_i2c([0xF3, 0x2D], wait=0.003)
         self.read_data_i2c(3)
         status = self.buffer[0] << 8 | self.buffer[1]
         status_to_bit = f'{status:016b}'
@@ -81,6 +90,18 @@ class SHT85(sht.SHT):
             elif key == 'Alert pending status':
                 logger.warning('At least one pending alert!')
 
+    @sensirion.calculate_crc
+    def read_measurement(self):
+        """Readout data for Periodic Mode or ART feature and update the properties"""
+        # The measurement data consists of 6 bytes (2 for each measurement value and 1 for each checksum)
+        self.read_data_i2c(6)
+        temp_digital = self.buffer[0] << 8 | self.buffer[1]
+        self.t = self.temp_conversion(temp_digital)
+        rh_digital = self.buffer[3] << 8 | self.buffer[4]
+        rhw = self.rhw_conversion(rh_digital)
+        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+        self.dp = cu.dew_point(self.t, self.rh)
+
     def single_shot(self):
         """Single Shot Data Acquisition Mode"""
         rep_code = {
@@ -88,10 +109,10 @@ class SHT85(sht.SHT):
             'medium': [0x24, 0x0B],
             'low': [0x24, 0x16]
         }
-        self.write_data_i2c(rep_code[self.rep])
+        self.write_data_i2c(rep_code[self.rep], wait=self.__class__._wait_times[self.rep])
         self.read_measurement()
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def periodic(self):
         """Start Periodic Data Acquisition Mode"""
         periodic_code = {
@@ -123,50 +144,50 @@ class SHT85(sht.SHT):
         }
         logger.info(f'Initiating Periodic Data Acquisition with frequency of "{self.mps} Hz" and '
                     f'"{self.rep}" repetition...')
-        self.write_data_i2c(periodic_code[self.mps][self.rep])
+        self.write_data_i2c(periodic_code[self.mps][self.rep], wait=self.__class__._wait_times[self.rep])
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def fetch(self):
         """Fetch command to transmit the measurement data. After the transmission the data memory is cleared"""
         logger.debug('Fetching data...')
-        self.write_data_i2c([0xE0, 0x00])
+        self.write_data_i2c([0xE0, 0x00], wait=0.003)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def art(self):
         """Start the Accelerated Response Time (ART) feature"""
         logger.info('Activating Accelerated Response Time (ART)...')
-        self.write_data_i2c([0x2B, 0x32])
+        self.write_data_i2c([0x2B, 0x32], wait=0.003)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def stop(self):
         """Break command to stop Periodic Data Acquisition Mode or ART feature"""
         logger.debug('Issuing Break Command...')
-        self.write_data_i2c([0x30, 0x93])
+        self.write_data_i2c([0x30, 0x93], wait=0.001)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def reset(self):
         """Apply Soft Reset"""
         self.stop()
         logger.debug('Applying Soft Reset...')
-        self.write_data_i2c([0x30, 0xA2])
+        self.write_data_i2c([0x30, 0xA2], wait=0.0015)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def enable_heater(self):
         """Enable heater"""
         logger.warning('Enabling heater...')
-        self.write_data_i2c([0x30, 0x6D])
+        self.write_data_i2c([0x30, 0x6D], wait=0.003)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def disable_heater(self):
         """Disable heater"""
         logger.info('Disabling heater...')
-        self.write_data_i2c([0x30, 0x66])
+        self.write_data_i2c([0x30, 0x66], wait=0.003)
 
-    @sensirion_i2c.printer
+    @sensirion.printer
     def clear_status(self):
         """Clear Status Register"""
         logger.info('Clearing Status Register...')
-        self.write_data_i2c([0x30, 0x41])
+        self.write_data_i2c([0x30, 0x41], wait=0.003)
 
     def temp_conversion(self, temp_digital):
         """Calculate temperature from data"""

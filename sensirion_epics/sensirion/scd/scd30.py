@@ -6,8 +6,10 @@ SCD30 Python wrapper library of smbus2
 """
 
 import time
+import struct
 
 import sensirion_epics.sensirion.sensirion_base as sensirion
+import sensirion_epics.sensirion.sht.utils.conversion_utils as cu
 import sensirion_epics.utils.log_utils as log_utils
 import sensirion_epics.sensirion.scd.scd as scd
 
@@ -27,6 +29,14 @@ class SCD30(scd.SCD):
         self.temp_offset = temp_offset
         self.altitude_compensation = altitude_compensation
 
+    # FIXME: Not tested!
+    @sensirion.calculate_crc
+    def _sn(self, cmd):
+        """Output of the serial number"""
+        self.write_data_i2c(cmd, wait=0.005)
+        self.read_data_i2c(33)
+        return self.buffer[:31]
+
     @property
     def sn(self):
         return self._sn(cmd=[0xD0])
@@ -35,7 +45,7 @@ class SCD30(scd.SCD):
     def reset(self):
         """Apply Soft Reset to force the sensor to the same state as after powering up"""
         logger.debug('Applying Soft Reset...')
-        self.write_data_i2c([0xD3, 0x04])
+        self.write_data_i2c([0xD3, 0x04], wait=0.005)
 
     @sensirion.printer
     def continuous_meas(self, amb_pressure):
@@ -44,18 +54,18 @@ class SCD30(scd.SCD):
         logger.debug(f'Starting continuous measurement with ambient pressure compensation of {amb_pressure} mBar...')
         msb = (amb_pressure >> 8) & 0xFF
         lsb = amb_pressure & 0xFF
-        self.write_data_i2c([0x00, 0x10, msb, lsb])
+        self.write_data_i2c([0x00, 0x10, msb, lsb], wait=0.005)
 
     @sensirion.printer
     def stop(self):
         """Stop command to stop continuous measurement"""
         logger.debug('Issuing Stop Command...')
-        self.write_data_i2c([0x01, 0x04])
+        self.write_data_i2c([0x01, 0x04], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def meas_interval(self):
-        self.write_data_i2c([0x46, 0x00])
+        self.write_data_i2c([0x46, 0x00], wait=0.005)
         self.read_data_i2c(3)
         return self.buffer[0] << 8 | self.buffer[1]
 
@@ -67,28 +77,45 @@ class SCD30(scd.SCD):
         logger.debug(f'Setting measurement interval of {interval} s...')
         msb = (interval >> 8) & 0xFF
         lsb = interval & 0xFF
-        self.write_data_i2c([0x46, 0x00, msb, lsb])
+        self.write_data_i2c([0x46, 0x00, msb, lsb], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def ready_status(self):
-        self.write_data_i2c([0x02, 0x02])
+        self.write_data_i2c([0x02, 0x02], wait=0.005)
         self.read_data_i2c(3)
         return self.buffer[0] << 8 | self.buffer[1]
+
+    @sensirion.calculate_crc
+    def read_measurement(self):
+        """Readout single measurement during continuous measurement mode and signal conversion to physical values"""
+        # The measurement data consists of 18 bytes (4 for each measurement value and 2 for each checksum)
+        self.read_data_i2c(18)
+        co2_uint32 = self.buffer[0] << 24 | self.buffer[1] << 16 | self.buffer[3] << 8 | self.buffer[4]
+        # CO2 in ppm
+        self.co2 = struct.unpack('f', struct.pack('I', co2_uint32))[0]
+        temp_uint32 = self.buffer[6] << 24 | self.buffer[7] << 16 | self.buffer[9] << 8 | self.buffer[10]
+        # Temperature in °C
+        self.t = struct.unpack('f', struct.pack('I', temp_uint32))[0]
+        # Relative humidity in %
+        rh_uint32 = self.buffer[12] << 24 | self.buffer[13] << 16 | self.buffer[15] << 8 | self.buffer[16]
+        rhw = struct.unpack('f', struct.pack('I', rh_uint32))[0]
+        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+        # Dew point in °C
+        self.dp = cu.dew_point(self.t, self.rh)
 
     def fetch(self):
         """Fetch latest results from continuous measurement when ready"""
         while not self.ready_status:
             time.sleep(0.003)
-        self.write_data_i2c([0x03, 0x00])
-        time.sleep(0.003)
+        self.write_data_i2c([0x03, 0x00], wait=0.005)
         self.read_measurement()
 
     @property
     @sensirion.calculate_crc
     def automatic_self_calibration(self):
         """Get Automatic Self-Calibration (ASC) state"""
-        self.write_data_i2c([0x53, 0x06])
+        self.write_data_i2c([0x53, 0x06], wait=0.005)
         self.read_data_i2c(3)
         return self.buffer[0] << 8 | self.buffer[1]
 
@@ -111,13 +138,13 @@ class SCD30(scd.SCD):
         sending the command."""
         assert state in [0, 1]
         state_bit = 0x01 if state else 0x00
-        self.write_data_i2c([0x53, 0x06, 0x00, state_bit])
+        self.write_data_i2c([0x53, 0x06, 0x00, state_bit], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def frc(self):
         """Get Forced Recalibration Value (FRC)"""
-        self.write_data_i2c([0x52, 0x04])
+        self.write_data_i2c([0x52, 0x04], wait=0.005)
         self.read_data_i2c(3)
         return self.buffer[0] << 8 | self.buffer[1]
 
@@ -133,13 +160,13 @@ class SCD30(scd.SCD):
         assert 400 <= co2_ppm <= 2000
         msb = (co2_ppm >> 8) & 0xFF
         lsb = co2_ppm & 0xFF
-        self.write_data_i2c([0x52, 0x04, msb, lsb])
+        self.write_data_i2c([0x52, 0x04, msb, lsb], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def temp_offset(self):
         """Get temperature offset in K/°C"""
-        self.write_data_i2c([0x54, 0x03])
+        self.write_data_i2c([0x54, 0x03], wait=0.005)
         self.read_data_i2c(3)
         return (self.buffer[0] << 8 | self.buffer[1]) / 100
 
@@ -150,13 +177,13 @@ class SCD30(scd.SCD):
         offset *= 100
         msb = (offset >> 8) & 0xFF
         lsb = offset & 0xFF
-        self.write_data_i2c([0x54, 0x03, msb, lsb])
+        self.write_data_i2c([0x54, 0x03, msb, lsb], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def altitude_compensation(self):
         """Get height over sea level in m above 0 to compensate CO2 measurement for altitude differences."""
-        self.write_data_i2c([0x51, 0x02])
+        self.write_data_i2c([0x51, 0x02], wait=0.005)
         self.read_data_i2c(3)
         return self.buffer[0] << 8 | self.buffer[1]
 
@@ -166,12 +193,12 @@ class SCD30(scd.SCD):
         """Set height over sea level in m above 0 to compensate CO2 measurement for altitude differences."""
         msb = (altitude >> 8) & 0xFF
         lsb = altitude & 0xFF
-        self.write_data_i2c([0x51, 0x02, msb, lsb])
+        self.write_data_i2c([0x51, 0x02, msb, lsb], wait=0.005)
 
     @property
     @sensirion.calculate_crc
     def firmware_version(self):
         """Get firmware version in Major.Minor format"""
-        self.write_data_i2c([0xD1, 0x00])
+        self.write_data_i2c([0xD1, 0x00], wait=0.005)
         self.read_data_i2c(3)
         return f'{self.buffer[0]}.{self.buffer[1]}'

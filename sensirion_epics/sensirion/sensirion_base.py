@@ -156,22 +156,19 @@ class SensirionI2C(SensirionBase):
         crc_status = True
         for n in range(0, len(self.buffer), 3):
             if self.buffer[n+2] != crc8(self.buffer[n:n+2]):
-                logger.warning(f'CRC Error in the word{n//3}!')
+                logger.warning(f'CRC Error in word{n//3}!')
                 crc_status = False
         if crc_status:
             logger.debug('CRC is good')
 
-    def write_data_i2c(self, cmd):
+    def write_data_i2c(self, cmd, wait=0.001):
         """Wrapper function for writing block data to SHT85 sensor"""
         if len(cmd) == 1:
             cmd = cmd[0] if isinstance(cmd, list) else cmd
             self.bus.write_byte(self.addr, cmd)
         else:
             self.bus.write_i2c_block_data(self.addr, register=cmd[0], data=cmd[1:])
-        try:
-            time.sleep(cu.WT[self.rep])
-        except AttributeError:
-            time.sleep(0.005)
+        time.sleep(wait)
 
     def read_data_i2c(self, length=32):
         self._buffer = self.bus.read_i2c_block_data(self.addr, 0x00, length)

@@ -22,13 +22,6 @@ MC = {
     }
 }
 
-# Waiting times based on repeatability setting in seconds
-WT = {
-    'high': 0.016,
-    'medium': 0.007,
-    'low': 0.005
-}
-
 
 def dew_point(t, rh):
     """Calculate dew point from temperature and relative humidity using Magnus formula. For more info:

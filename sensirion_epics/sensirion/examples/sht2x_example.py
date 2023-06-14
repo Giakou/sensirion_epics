@@ -22,9 +22,8 @@ if __name__ == '__main__':
         # Check S/N
         logger.info(f'serial number = {mysensor.sn}')
         while True:
-            mysensor.single_shot(param='t')
+            mysensor.single_shot()
             logger.info(f'Temperature = {mysensor.t} °C')
-            mysensor.single_shot(param='rh')
             logger.info(f'Relative Humidity = {mysensor.rh}%')
             logger.info(f'Dew Point = {mysensor.dp} °C')
             time.sleep(1)

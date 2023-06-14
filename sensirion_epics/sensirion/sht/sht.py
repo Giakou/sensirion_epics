@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Parent class for SHTxy sensors from Sensirion
+Parent class for SHT sensors from Sensirion
 """
 
 import abc
@@ -16,7 +16,7 @@ logger = log_utils.get_logger()
 
 
 class SHT(sensirion.SensirionI2C):
-
+    """SHT class"""
     def __init__(self):
         super().__init__()
 
@@ -26,36 +26,31 @@ class SHT(sensirion.SensirionI2C):
 
     @abc.abstractmethod
     def temp_conversion(self, *args):
+        """Digital to Analog conversion of temperature data"""
         pass
 
     @abc.abstractmethod
     def rhw_conversion(self, *args):
+        """Digital to Analog conversion of relative humidity above liquid water (t > 0) data"""
+        pass
+
+    @abc.abstractmethod
+    def read_measurement(self):
+        """Readout measurement data"""
         pass
 
     def rhi_conversion(self, rhw):
-        """Calculate relative humidity from data"""
+        """Convert relative humidity above liquid water (t > 0) to relative humidity above ice (t < 0)"""
         # Significant digits based on the SHT21 resolution of 0.04 %RH
-        rh_analog = round(rhw * math.exp(cu.WT['water']['beta'] * self.t / (cu.WT['water']['lambda']))
-                          / math.exp(cu.WT['ice']['beta'] * self.t / (cu.WT['ice']['lambda'])), 2)
+        rh_analog = round(rhw * math.exp(cu.MC['water']['beta'] * self.t / (cu.MC['water']['lambda']))
+                          / math.exp(cu.MC['ice']['beta'] * self.t / (cu.MC['ice']['lambda'])), 2)
         # Make sure that relative humidity never returns a 0% value, otherwise the dew point calculation will fail
         rh_analog = 1e-3 if rh_analog < 0.01 else rh_analog
         return rh_analog
 
     @sensirion.calculate_crc
-    def read_measurement(self):
-        """Readout data for Periodic Mode or ART feature and update the properties"""
-        # The measurement data consists of 6 bytes (2 for each measurement value and 1 for each checksum)
-        self.read_data_i2c(6)
-        temp_digital = self.buffer[0] << 8 | self.buffer[1]
-        self.t = self.temp_conversion(temp_digital)
-        rh_digital = self.buffer[3] << 8 | self.buffer[4]
-        rhw = self.rhw_conversion(rh_digital)
-        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
-        self.dp = cu.dew_point(self.t, self.rh)
-
-    @sensirion.calculate_crc
     def _sn(self, cmd):
         """Output of the serial number"""
-        self.write_data_i2c(cmd)
+        self.write_data_i2c(cmd, wait=0.003)
         self.read_data_i2c(6)
         return (self.buffer[0] << 24) + (self.buffer[1] << 16) + (self.buffer[3] << 8) + self.buffer[4]

@@ -25,6 +25,13 @@ def printer(func):
 
 class SHT4x(sht.SHT):
     """SHT4x class"""
+
+    _wait_times = {
+        'high': 0.0083,
+        'medium': 0.0045,
+        'low': 0.0016
+    }
+
     def __init__(self, addr, bus_intf=1, rep='high'):
         """Constructor"""
         super().__init__()
@@ -48,7 +55,7 @@ class SHT4x(sht.SHT):
     def reset(self):
         """Apply Soft Reset"""
         logger.debug('Applying Soft Reset...')
-        self.write_data_i2c([0x94])
+        self.write_data_i2c([0x94], wait=0.001)
 
     def single_shot(self):
         repeatability = {
@@ -56,7 +63,7 @@ class SHT4x(sht.SHT):
             'medium': [0xF6],
             'low': [0xE0]
         }
-        self.write_data_i2c(repeatability[self.rep])
+        self.write_data_i2c(repeatability[self.rep], wait=self.__class__._wait_times[self.rep])
         self.read_measurement()
 
     @printer
@@ -77,7 +84,9 @@ class SHT4x(sht.SHT):
         }
         assert mwatt in cmd_dict.keys()
         assert duration in cmd_dict[200].keys()
-        self.write_data_i2c(cmd_dict[mwatt][duration])
+        additional_time = 0.1 if duration == 1 else 0.01
+        wait = duration + additional_time + self.__class__._wait_times['high']
+        self.write_data_i2c(cmd_dict[mwatt][duration], wait=wait)
         time.sleep(duration)
         self.read_measurement()
 
