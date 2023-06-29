@@ -41,8 +41,9 @@ class SHT85(sht.SHT):
     def sn(self):
         return self._sn(cmd=[0x36, 0x82])
 
+    # TODO: Investigate why the chaining of these decorators do not work
     @property
-    @sensirion.calculate_crc
+    # @sensirion.calculate_crc
     def status(self):
         """Read Status Register"""
         self.write_data_i2c([0xF3, 0x2D], wait=0.003)
