@@ -65,7 +65,8 @@ class SHT2x(sht.SHT):
             self.t = self.temp_conversion(digital_value)
         else:
             rhw = self.rhw_conversion(digital_value)
-            self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+            # Sensirion is calibrating most of their sensors using the magnus coefficients above water, even for t < 0 °C
+            self.rh = rhw if self.t >= -45 else self.rhi_conversion(rhw)
 
     def single_shot_t(self):
         """Single temperature measurement in hold or no-hold master mode"""

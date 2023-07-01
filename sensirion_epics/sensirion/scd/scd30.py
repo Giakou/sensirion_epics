@@ -100,7 +100,8 @@ class SCD30(scd.SCD):
         # Relative humidity in %
         rh_uint32 = self.buffer[12] << 24 | self.buffer[13] << 16 | self.buffer[15] << 8 | self.buffer[16]
         rhw = struct.unpack('f', struct.pack('I', rh_uint32))[0]
-        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+        # Sensirion is calibrating most of their sensors using the magnus coefficients above water, even for t < 0 °C
+        self.rh = rhw if self.t >= -45 else self.rhi_conversion(rhw)
         # Dew point in °C
         self.dp = cu.dew_point(self.t, self.rh)
 

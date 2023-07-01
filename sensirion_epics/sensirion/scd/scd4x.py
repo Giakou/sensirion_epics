@@ -85,7 +85,8 @@ class SCD4x(scd.SCD):
         # Relative humidity in %
         rh_digital = self.buffer[6] << 8 | self.buffer[7]
         rhw = self.rhw_conversion(rh_digital)
-        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+        # Sensirion is calibrating most of their sensors using the magnus coefficients above water, even for t < 0 °C
+        self.rh = rhw if self.t >= -45 else self.rhi_conversion(rhw)
         # Dew point in °C
         self.dp = cu.dew_point(self.t, self.rh)
 

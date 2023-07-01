@@ -100,7 +100,8 @@ class SHT85(sht.SHT):
         self.t = self.temp_conversion(temp_digital)
         rh_digital = self.buffer[3] << 8 | self.buffer[4]
         rhw = self.rhw_conversion(rh_digital)
-        self.rh = rhw if self.t >= 0 else self.rhi_conversion(rhw)
+        # Sensirion is calibrating most of their sensors using the magnus coefficients above water, even for t < 0 °C
+        self.rh = rhw if self.t >= -45 else self.rhi_conversion(rhw)
         self.dp = cu.dew_point(self.t, self.rh)
 
     def single_shot(self):

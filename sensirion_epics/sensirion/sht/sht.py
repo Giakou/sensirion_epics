@@ -40,7 +40,7 @@ class SHT(sensirion.SensirionI2C):
         pass
 
     def rhi_conversion(self, rhw):
-        """Convert relative humidity above liquid water (t > 0) to relative humidity above ice (t < 0)"""
+        """Convert relative humidity above liquid water to relative humidity above ice"""
         # Significant digits based on the SHT21 resolution of 0.04 %RH
         rh_analog = round(rhw * math.exp(cu.MC['water']['beta'] * self.t / (cu.MC['water']['lambda']))
                           / math.exp(cu.MC['ice']['beta'] * self.t / (cu.MC['ice']['lambda'])), 2)
