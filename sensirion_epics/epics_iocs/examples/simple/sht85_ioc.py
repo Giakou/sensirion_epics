@@ -7,7 +7,7 @@ from pcaspy import Driver, SimpleServer
 prefix = 'sht85'
 pvdb = {
     'temperature': {
-        'prec': 3,
+        'prec': 2,
         'type': 'float',
         'unit': '°C',
         'mdel': -1
@@ -19,7 +19,7 @@ pvdb = {
         'mdel': -1
     },
     'dew_point': {
-        'prec': 3,
+        'prec': 2,
         'type': 'float',
         'unit': '°C',
         'mdel': -1

@@ -19,21 +19,21 @@
   'temperature:VALUE:cur':
     'type': 'float'
     'unit': '°C'
-    'prec': 3
+    'prec': 2
     'mdel': -1
     'error_value': -300
     'lut': 't'
   'humidity:VALUE:cur':
     'type': 'float'
     'unit': '%'
-    'prec': 3
+    'prec': 2
     'mdel': -1
     'error_value': 100
     'lut': 'rh'
   'dewpoint:VALUE:cur':
     'type': 'float'
     'unit': '°C'
-    'prec': 3
+    'prec': 2
     'mdel': -1
     'error_value': 300
     'lut': 'dp'
