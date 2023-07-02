@@ -45,7 +45,7 @@ class SHT(sensirion.SensirionI2C):
         rh_analog = round(rhw * math.exp(cu.MC['water']['beta'] * self.t / (cu.MC['water']['lambda']))
                           / math.exp(cu.MC['ice']['beta'] * self.t / (cu.MC['ice']['lambda'])), 2)
         # Make sure that relative humidity never returns a 0% value, otherwise the dew point calculation will fail
-        rh_analog = 1e-3 if rh_analog < 0.01 else rh_analog
+        rh_analog = 5e-3 if rh_analog < 0.01 else rh_analog
         return rh_analog
 
     @sensirion.calculate_crc
