@@ -150,5 +150,5 @@ class SHT2x(sht.SHT):
         # Significant digits based on the SHT21 resolution of 0.04 %RH
         rh_analog = round(-6 + 125 * rh_digital / (2 ** 16 - 1), 2)
         # Make sure that relative humidity never returns a 0% value, otherwise the dew point calculation will fail
-        rh_analog = 1e-3 if rh_analog < 0.01 else rh_analog
+        rh_analog = 5e-3 if rh_analog < 0.01 else rh_analog
         return rh_analog
